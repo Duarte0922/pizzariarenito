@@ -110,7 +110,7 @@ let catAtual = state.menu[0] ? state.menu[0].cat : null;
 function renderTabs() {
   $("phone").value = state.phone;
   $("tabs").innerHTML = state.menu.map(g => `
-    <button class="${g.cat === catAtual ? "on" : ""}" onclick="selCat(${JSON.stringify(g.cat)})">${esc(g.cat)}</button>
+    <button class="${g.cat === catAtual ? "on" : ""}" data-cat="${esc(g.cat)}">${esc(g.cat)}</button>
   `).join("") || `<span class="empty">Nenhuma categoria ainda</span>`;
 }
 function selCat(cat) { catAtual = cat; renderTabs(); renderLista(); }
@@ -128,8 +128,8 @@ function renderLista() {
       ${thumb}
       <div class="info"><b>${esc(it.n)}</b><small>${it.o.length > 1 ? "a partir de " : ""}${brl(precoMin)}</small></div>
       <div class="acts">
-        <button class="btn sec small" onclick="editProd(${i})">Editar</button>
-        <button class="btn danger small" onclick="delProd(${i})">Excluir</button>
+        <button class="btn sec small" data-edit="${i}">Editar</button>
+        <button class="btn danger small" data-del="${i}">Excluir</button>
       </div>
     </div>`;
   }).join("");
@@ -228,6 +228,16 @@ function salvarProd() {
   saveState(); fecharModal(); renderLista();
 }
 
+$("tabs").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-cat]");
+  if (btn) selCat(btn.dataset.cat);
+});
+$("lista").addEventListener("click", e => {
+  const eb = e.target.closest("button[data-edit]");
+  const db = e.target.closest("button[data-del]");
+  if (eb) editProd(Number(eb.dataset.edit));
+  if (db) delProd(Number(db.dataset.del));
+});
 $("phone").addEventListener("input", e => { state.phone = e.target.value.trim(); saveState(); });
 $("btnNovaCat").addEventListener("click", novaCategoria);
 $("btnNovoProd").addEventListener("click", novoProd);
