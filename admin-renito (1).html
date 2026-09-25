@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Cardápio - Tele Pizza Burguer Renito</title>
+<style>
+:root{--red:#d62a0e;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--bg:#f3f2f1;--ok:#15803d}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);margin:0;padding-bottom:60px}
+.wrap{max-width:720px;margin:0 auto;padding:16px}
+h1{color:var(--red);font-size:20px;margin:8px 0 4px}
+.sub{color:var(--mute);font-size:13px;margin-bottom:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px;font-weight:600}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}
+textarea{resize:vertical}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{background:var(--red);color:#fff;border:0;border-radius:8px;font:inherit;font-weight:700;padding:10px 14px;cursor:pointer}
+.btn.sec{background:#fff;color:var(--red);border:1px solid var(--red)}
+.btn.ok{background:var(--ok)}
+.btn.small{padding:6px 10px;font-size:12px;font-weight:600}
+.btn.danger{background:#fff;color:#b91c1c;border:1px solid #b91c1c}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{flex:none;padding:8px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.tabs button.on{background:var(--red);color:#fff;border-color:var(--red)}
+.prod{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+.prod img{width:44px;height:44px;object-fit:cover;border-radius:6px;flex:none}
+.prod .ph{width:44px;height:44px;border-radius:6px;background:var(--bg);display:grid;place-items:center;flex:none;font-size:20px}
+.prod .info{flex:1;min-width:0}
+.prod b{display:block;font-size:14px}
+.prod small{color:var(--mute);font-size:12px}
+.prod .acts{display:flex;gap:6px;flex:none}
+.opt-row{display:flex;gap:8px;margin-bottom:6px;align-items:center}
+.opt-row input{flex:1}
+.opt-row button{flex:none}
+.topbar{position:sticky;top:0;background:var(--bg);padding-top:10px;z-index:5}
+.topbar .btn{width:100%;margin-bottom:8px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:0}
+.modal.on{display:flex}
+.modal .panel{background:#fff;width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px}
+.msg{font-size:12px;color:var(--ok);margin-left:8px}
+.empty{color:var(--mute);font-size:13px;padding:20px;text-align:center}
+.imgprev{width:70px;height:70px;object-fit:cover;border-radius:8px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Painel do cardápio</h1>
+  <div class="sub">Tele Pizza Burguer Renito — edite aqui e depois baixe o cardápio atualizado para enviar ao cliente</div>
+
+  <div class="card">
+    <label>WhatsApp para pedidos (com DDI 55 + DDD, só números)</label>
+    <input id="phone" placeholder="5531986126555">
+  </div>
+
+  <div class="topbar">
+    <button class="btn ok" id="btnBaixar">⬇ Baixar cardápio atualizado (index.html)</button>
+    <div class="row">
+      <button class="btn sec small" id="btnExport">Exportar backup</button>
+      <button class="btn sec small" id="btnImportShow">Importar backup</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:flex-end">
+      <div>
+        <label>Categorias</label>
+      </div>
+      <button class="btn small" id="btnNovaCat" style="flex:none">+ Categoria</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <button class="btn" id="btnNovoProd" style="width:100%">+ Adicionar produto nesta categoria</button>
+  </div>
+
+  <div id="lista"></div>
+</div>
+
+<div class="modal" id="modal"><div class="panel" id="modalBody"></div></div>
+
+<script>
+
+const SEED_MENU = [{"cat": "Combos", "items": [{"n": "01 COMBO CASAL", "d": "2 X-Eggburguer + 1 pizza popular GG", "o": [["Por apenas", 78]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/aac3a7e3-f9ba-4fbb-b137-57b0e73787b0", "e": "🍕"}, {"n": "02 COMBO FAMÍLIA", "d": "4 X-Eggbacon + 2 pizzas populares GG", "o": [["Por apenas", 150]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/8bde20e0-fff8-4ad4-bde0-cb83f35224a0", "e": "🍕"}]}, {"cat": "Sanduíches populares", "items": [{"n": "01 MISTO QUENTE", "d": "Pão de hambúrguer, 2 presuntos, 2 mussarelas e molho especial", "o": [["1 por", 13], ["2 por", 22]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/5ff6965a-f569-4848-ab5e-82da29e92023", "e": "🍔"}, {"n": "02 HAMBÚRGUER", "d": "Pão, hambúrguer, salada, milho, batata e molho especial", "o": [["1 por", 13], ["2 por", 22]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/731aa425-fe7b-4712-8377-3a6b903b6242", "e": "🍔"}, {"n": "03 X-BURGUER", "d": "Pão, hambúrguer, presunto, mussarela, salada, milho, batata e molho especial", "o": [["1 por", 14], ["2 por", 24]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/41a9fb4d-6828-4f15-a8fe-5b0103ed10c6", "e": "🍔"}, {"n": "04 X-BACON", "d": "Pão, hambúrguer, presunto, mussarela, bacon, salada, milho, batata e molho especial", "o": [["1 por", 15], ["2 por", 26]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c8356487-5ced-48b4-b794-c26de5b2218d", "e": "🍔"}, {"n": "05 BAURU", "d": "Pão de hambúrguer, presunto, mussarela, bacon, ovo, salada e molho especial", "o": [["1 por", 15], ["2 por", 26]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/528bdbd7-d049-48d8-b06f-eb4859b99146", "e": "🍔"}, {"n": "06 FRAMBURGUER", "d": "Pão, hambúrguer de frango, presunto, mussarela, ovo, milho, batata, salada e molho especial", "o": [["1 por", 15], ["2 por", 26]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/9dbd3cdf-6d75-4eff-8964-7eff88dec275", "e": "🍔"}, {"n": "07 X-EGGBURGUER", "d": "Pão, hambúrguer de boi, presunto, mussarela, ovo, salada, milho, batata e molho especial", "o": [["1 por", 15], ["2 por", 26]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/68118f48-8948-4010-9083-734f3c67f1ff", "e": "🍔"}, {"n": "08 MISTO ESPECIAL", "d": "Pão de hambúrguer, 2 presuntos, 2 mussarelas, bacon, ovo e molho especial", "o": [["1 por", 15], ["2 por", 26]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/9b982e1b-bca1-4c7d-8afb-f8a32b302d51", "e": "🍔"}, {"n": "09 CACHORRO-QUENTE", "d": "Pão de dog, salsicha, presunto, bacon, frango desfiado, mussarela, milho, batata, passas e molho especial", "o": [["1 por", 18], ["2 por", 32]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/5a68060f-0fa4-4622-a013-fb1e570120bf", "e": "🍔"}, {"n": "10 X QUERO BACON", "d": "Pão, 2 presuntos, 2 mussarelas, 2 bacon, ovo, frango desfiado, milho, batata, salada e molho especial", "o": [["1 por", 18], ["2 por", 32]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c3279743-c43a-48f1-9b1d-cc07bfa36163", "e": "🍔"}, {"n": "11 X-EGGBACON", "d": "Pão, hambúrguer, presunto, mussarela, bacon, ovo, milho, batata, salada e molho especial", "o": [["1 por", 18], ["2 por", 32]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/321dc0b1-1bb2-4b70-a62a-c0a9b2a25d3a", "e": "🍔"}, {"n": "12 X-TUDO", "d": "Pão, hambúrguer de boi, presunto, mussarela, bacon, ovo, salada, milho, batata, passas e molho especial", "o": [["1 por", 18], ["2 por", 32]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/91bb0760-933b-418d-abde-ae1ff2de6dd8", "e": "🍔"}, {"n": "13 LANÇADOR", "d": "Pão, hambúrguer de picanha 90g, presunto, mussarela, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 21], ["2 por", 38]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/e9edcf08-4905-4147-baf9-449cc554a759", "e": "🍔"}]}, {"cat": "Sanduíches especiais", "items": [{"n": "14 X-TUDÃO", "d": "Pão, 2 hambúrgueres de boi, 2 presuntos, 2 mussarelas, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 25], ["2 por", 44]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/7686f779-ded2-4510-82d9-fa2e5dff7af0", "e": "🍔"}, {"n": "15 X-BURGUER DUPLO", "d": "Pão, 2 hambúrgueres de boi, 2 presuntos, 2 mussarelas, 2 frango desfiado, salada, milho, batata e molho especial", "o": [["1 por", 25], ["2 por", 44]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0473bdc9-c966-4d6f-846d-8869e837cb22", "e": "🍔"}, {"n": "16 X-FRANGÃO", "d": "Pão, 2 hambúrgueres de frango, presunto, mussarela, frango desfiado, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 25], ["2 por", 44]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c34416fd-b68f-4686-ac81-e0d9c813b011", "e": "🍔"}, {"n": "17 RM SANDUÍCHES", "d": "Pão, 2 hambúrgueres, 2 presuntos, 2 mussarelas, frango desfiado, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 25], ["2 por", 44]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0246cc92-99bb-405e-bab6-3ce08fae9eb4", "e": "🍔"}, {"n": "18 LR BURGUER", "d": "Pão, hambúrguer de picanha 90g, hambúrguer de boi, hambúrguer de frango, presunto, mussarela, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 28], ["2 por", 50]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/19a0cfea-0184-48e6-935a-f26a25994c2c", "e": "🍔"}, {"n": "19 SUPER X-TUDO", "d": "Pão, hambúrguer de picanha 90g, hambúrguer de boi, hambúrguer de frango, presunto, mussarela, frango desfiado, bacon, ovo, salada, milho, batata e molho especial", "o": [["1 por", 29], ["2 por", 52]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/fa8391be-2477-43ae-a864-3bcb2c76b8b9", "e": "🍔"}, {"n": "20 RANGÃO", "d": "Pão, 2 hambúrgueres de boi, hambúrguer de frango, 2 presuntos, 2 mussarelas, 2 bacon, 2 ovos, salada, milho, batata e molho especial", "o": [["1 por", 29], ["2 por", 52]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/189b5638-b523-4b51-ad13-ee952bedbb7f", "e": "🍔"}, {"n": "21 CALIFÓRNIA", "d": "Pão, 2 hambúrgueres de picanha 90g, presunto, mussarela, 2 bacon, 2 ovos, abacaxi, salada e molho especial", "o": [["1 por", 30], ["2 por", 56]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/904ca1ed-9745-4b2c-b323-29317f1887c9", "e": "🍔"}, {"n": "22 LAGRIMOSO", "d": "Pão, 2 hambúrgueres de boi, 2 de frango, 2 presuntos, 2 mussarelas, 2 calabresas, 2 bacon, 2 ovos, salada e molho especial", "o": [["1 por", 30], ["2 por", 56]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/4293ad37-ff71-4244-b346-07d4fdf7e9ab", "e": "🍔"}, {"n": "23 AMERICANO DUPLO", "d": "Pão, 2 hambúrgueres de boi, 2 de frango, 2 presuntos, 2 mussarelas, abacaxi, 2 calabresas, 2 bacon, 2 ovos, salada e molho especial", "o": [["1 por", 30], ["2 por", 56]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/93fdcb2d-c6e1-42ee-8945-5bc660074ee8", "e": "🍔"}, {"n": "24 GULÃO", "d": "Pão, hambúrguer de picanha 120g, hambúrguer de frango, 2 presuntos, 2 mussarelas, 2 calabresas, 2 bacon, 2 ovos, salada e molho especial", "o": [["1 por", 30], ["2 por", 56]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/ab437317-2901-4c30-a122-191b1baeca1f", "e": "🍔"}, {"n": "25 CHEFÃO", "d": "Pão, 2 hambúrgueres de picanha 120g, 2 presuntos, 2 mussarelas, 2 calabresas, 2 ovos, 2 bacon, salada e molho especial", "o": [["1 por", 34], ["2 por", 62]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/bde8cac2-8b05-4898-9484-f886af825469", "e": "🍔"}, {"n": "26 DESAFIO RENITO", "d": "Pão, 2 hambúrgueres de picanha 120g, 2 de frango, 2 presuntos, 2 mussarelas, 2 calabresas, 2 bacon, 2 ovos, abacaxi, salada e molho especial", "o": [["1 por", 39], ["2 por", 72]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/934f7ca4-267c-4a5a-ace2-f9c1c1d5bde4", "e": "🍔"}]}, {"cat": "Pizzas populares", "items": [{"n": "01 CALABRESA", "d": "Mussarela, calabresa e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0d885560-98f2-483d-b45a-d6b85baf66eb", "e": "🍕"}, {"n": "02 NAPOLITANA", "d": "Mussarela, presunto, tomate e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/38fdf842-59f7-448d-98f4-4d3221eb8d4e", "e": "🍕"}, {"n": "03 MUSSARELA", "d": "Mussarela e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0ef8270b-7b49-4fac-a873-ed4329963645", "e": "🍕"}, {"n": "04 PRESUNTO", "d": "Mussarela, presunto e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/9bf82bd3-b4b5-4c5f-85e1-02b946c6fb18", "e": "🍕"}, {"n": "05 MARGUERITA", "d": "Mussarela, tomate, manjericão e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/17c8f80f-d3d2-4940-8294-ced4f787c62c", "e": "🍕"}, {"n": "06 FUGAZETA", "d": "Mussarela, cebola, alho frito e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/dd98cc74-dc07-4335-99d1-0caedf385831", "e": "🍕"}, {"n": "07 BACON", "d": "Mussarela, bacon e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/4d89ac58-8b4b-4a3a-aa5f-02d0bc474846", "e": "🍕"}, {"n": "08 BACON E MILHO", "d": "Mussarela, bacon, milho e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/bc24a65a-31f7-4a74-8809-7f1eb0f4bd79", "e": "🍕"}, {"n": "09 ESPANTA-VAMPIRO", "d": "Mussarela, bacon, alho torrado e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/6fc1b134-5d18-4b62-92ff-b207bea5c0d2", "e": "🍕"}, {"n": "10 TOMATE", "d": "Mussarela, tomate, milho e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/7700f1e1-d43b-46dc-a2c5-7f8a494fb373", "e": "🍕"}, {"n": "11 MILHO", "d": "Mussarela, milho, catupiry e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/7b42a14d-7387-4866-a9c0-4a539e3b1c2d", "e": "🍕"}, {"n": "11/2 MILHO AO CHEDDAR", "d": "Mussarela, milho, cheddar e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/a0a2d4bc-280b-4a04-a387-90521e12dbda", "e": "🍕"}, {"n": "12 SABOR DE MINAS", "d": "Mussarela, calabresa, tomate, cebola e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/9b6aa59f-dc2f-49c4-a714-8603b62ac436", "e": "🍕"}, {"n": "13 A MAIS PEDIDA", "d": "Mussarela, presunto, tomate, milho, manjericão e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0b9ee956-d365-4552-a64c-1461a8f14a16", "e": "🍕"}, {"n": "14 MANDA A MINHA", "d": "Mussarela, calabresa, azeitona, cebola e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/8d970462-ad0f-4c87-bcf6-1c4e2aa1b768", "e": "🍕"}, {"n": "15 A MELHOR DE TODAS", "d": "Mussarela, calabresa, palmito, cebola, cebolinha e orégano", "o": [["Média 25 cm 1 por", 32], ["Grande 30 cm 1 por", 44], ["Gigante 35 cm 1 por", 56], ["Média 25 cm 2 por", 58], ["Grande 30 cm 2 por", 79], ["Gigante 35 cm 2 por", 100]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/147ee558-7292-4840-84d3-5b67c7163072", "e": "🍕"}]}, {"cat": "Pizza especiais", "items": [{"n": "16 A MODA", "d": "Mussarela, presunto, calabresa, tomate, milho, cebola, pimentão, azeitona, bacon e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c06e973b-93d5-4623-8fec-e3e5a2e18a22", "e": "🍕"}, {"n": "17 FRANGO COM CATUPIRY", "d": "Mussarela, frango desfiado, catupiry e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/8ea3343d-1836-4a23-8add-b862dbfb8bc4", "e": "🍕"}, {"n": "18 FRANGO A BOLONHESA", "d": "Mussarela, frango desfiado, molho à bolonhesa e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/8a4aff96-c6ea-46f3-b2d1-c193931e508b", "e": "🍕"}, {"n": "19 FRANGO AO CHEDDAR", "d": "Mussarela, frango desfiado, cheddar e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/3ee4ed11-2732-4fe1-b900-a49ba4e3dce2", "e": "🍕"}, {"n": "20 PORTUGUESA", "d": "Mussarela, presunto, calabresa, tomate, ovo grelhado, cebola, azeitona e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/5bdcfc11-d6ed-4da4-beb6-a5e06f1ee728", "e": "🍕"}, {"n": "21 PALMITO COM CATUPIRY", "d": "Mussarela, palmito, catupiry e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c1ee79a2-74b8-4ec7-9789-283924d5cf7a", "e": "🍕"}, {"n": "22 PALMITO COM CHEDDAR", "d": "Mussarela, palmito, cheddar e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/75362ba0-2e59-443d-80d5-289f70377096", "e": "🍕"}, {"n": "23 PALMITO A BOLONHESA", "d": "Mussarela, palmito, molho à bolonhesa e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/536ff75e-9576-40a4-a152-54a0ac4b1e87", "e": "🍕"}, {"n": "24 VEGETARIANA", "d": "Mussarela, tomate, milho, cebola, pimentão, azeitona, palmito e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/6623e9fa-2fd7-4093-bb40-e17b2f34918c", "e": "🍕"}, {"n": "25 QUATRO CARNES", "d": "Pão, hambúrguer, presunto, mussarela, bacon, salada, milho, batata e molho especial", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/86a8c40f-5810-4cd0-b042-4ae84942e7f2", "e": "🍕"}, {"n": "26 SUGESTÃO RENITO", "d": "Mussarela, calabresa, milho, cebola, bacon, cebolinha, catupiry e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/d7dbe0dc-6b41-4a6c-bf9e-6b1157a16b45", "e": "🍕"}, {"n": "27 CALABRESA ESPECIAL", "d": "Mussarela, calabresa, tomate, cebola, pimentão, bacon e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/74485d41-da5a-440a-8102-c82b3cd2c5b5", "e": "🍕"}, {"n": "28 LOMBO CANADENSE", "d": "Mussarela, lombo defumado e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/7259b3d0-e087-45a1-a339-b719c474b9ac", "e": "🍕"}, {"n": "29 MILHOMBO", "d": "Mussarela, lombo defumado, milho, catupiry e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/fdea3716-be48-4833-acbe-9ff652d8ea96", "e": "🍕"}, {"n": "30 LOMBO TROPICAL", "d": "Mussarela, lombo defumado, abacaxi e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/2454c686-a778-4920-960a-c6cb5e0978f9", "e": "🍕"}, {"n": "31 CHEFE CHEDDAR", "d": "Mussarela, presunto, cebola, azeitona, cheddar e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/bd19aec0-b1aa-4c73-8447-74aecb3fdfef", "e": "🍕"}, {"n": "32 BACON ESPECIAL", "d": "Mussarela, bacon, tomate, cebola, parmesão e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/38d958ee-652e-4b4f-98f3-a18a0b943e57", "e": "🍕"}, {"n": "33 BACON E MILHO ESPECIAL", "d": "Mussarela, bacon, milho, tomate, cebola, parmesão e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/dc9ffb9d-13a6-46e8-b931-7666b09cba52", "e": "🍕"}, {"n": "34 QUATRO QUEIJO", "d": "Mussarela, parmesão, catupiry, provolone e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/af7b3480-cca0-44e0-98f4-609ecd001abc", "e": "🍕"}, {"n": "35 CINCO QUEIJOS", "d": "Mussarela, cheddar, parmesão, catupiry, provolone e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/b8ab86a0-3879-4014-8c2b-f9364a54ba23", "e": "🍕"}, {"n": "36 ATUM", "d": "Mussarela, atum, tomate, cebola e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/2de1028d-f690-4d4a-959d-52fd04294bfb", "e": "🍕"}, {"n": "37 SALAMINHO ITALIANO", "d": "Mussarela, salaminho, azeitona, parmesão e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/cb860b78-66a5-4490-b9df-19ee3d61486a", "e": "🍕"}, {"n": "38 SABOR DE MINAS", "d": "Mussarela, presunto, calabresa, tomate, cebola, cheddar e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/c9bee06f-4ca9-4b4b-9557-86cf5e0f5494", "e": "🍕"}, {"n": "39 A MAIS PEDIDA", "d": "Mussarela, presunto, lombo defumado, tomate, milho, manjericão, bacon e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/57d5dc6e-24ae-41f3-af27-4d19dd5cd1b5", "e": "🍕"}, {"n": "40 MELHOR DE TODAS ESPECIAL", "d": "Mussarela, presunto, calabresa, bacon, palmito, cebola, cebolinha, catupiry e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/823b5dc8-e9f1-443a-968f-b19439245941", "e": "🍕"}, {"n": "41 À MODA RENITO ESPECIAL", "d": "Mussarela, presunto, salaminho, tomate, cebola, pimentão, azeitona, bacon e orégano", "o": [["Média 25 cm 1 por", 44], ["Grande 30 cm 1 por", 56], ["Gigante 35 cm 1 por", 66], ["Média 25 cm 2 por", 79], ["Grande 30 cm 2 por", 100], ["Gigante 35 cm 2 por", 118]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/b3b1aff2-e17b-4206-abce-5b87ef356cf4", "e": "🍕"}]}, {"cat": "Porções", "items": [{"n": "01 PORÇÃO CONTRA FILÉ", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Contra filé 400g", 58], ["Combo", 75]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/781c861b-1636-43ff-88a6-928852aca778", "e": "🍟"}, {"n": "02 PORÇÃO CARNE DE SOL", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Carne de sol 400g", 58], ["Combo", 75]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/0d42479f-749b-45aa-a0ba-765fe2ed00d5", "e": "🍟"}, {"n": "03 PORÇÃO DE PERNIL TRASEIRO", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Pernil traseiro 400g", 48], ["Combo", 66]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/6100cf66-251e-46f9-915d-ab60891ff0f2", "e": "🍟"}, {"n": "04 COSTELINHA DE PORCO", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Costelinha de porco 800g", 58], ["Combo", 75]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/7ceaaf64-e367-4999-a807-d6cacf7ee74d", "e": "🍟"}, {"n": "05 FRANGO A PASSARINHO", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Frango a passarinho 1kg", 49], ["Combo", 67]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/1b78b3ca-7615-4cc9-abac-b0fd8eac1e8f", "e": "🍟"}, {"n": "06 FILÉ DE TILÁPIA", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Filé de tilápia 400g", 49], ["Combo", 67]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/a06a7541-37b3-4541-9e23-10c604b2d434", "e": "🍟"}, {"n": "07 ISCA DE TILÁPIA", "d": "Escolha a porção ou o combo com batata", "o": [["Batata ou mandioca gratinada 500g", 30], ["Isca de tilápia 500g", 58], ["Combo", 75]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/4b1481dd-40ec-4c73-ba19-457f0a24289a", "e": "🍟"}, {"n": "08 ANEL DE CEBOLA", "d": "Anel de cebola empanada e gratinada", "o": [["450g", 35]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/07994646-d50f-4e06-ae63-bd961b6617d7", "e": "🍟"}]}, {"cat": "Espaguete na chapa", "items": [{"n": "ESPAGUETE NA CHAPA", "d": "Bacon, calabresa e frango desfiado", "o": [["Pequeno 1 por", 23], ["Grande 1 por", 30], ["Pequeno 2 por", 40], ["Grande 2 por", 52]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/921df9b5-a00b-46ee-bad2-f4cf37543e2c", "e": "🍝"}]}, {"cat": "Arroz na chapa", "items": [{"n": "ARROZ NA CHAPA", "d": "Arroz, bacon, ovo, milho, cebola, pimentão e sazon nordestino", "o": [["1 por", 28], ["2 por", 50]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/5583bcf6-d0f0-445a-91f4-d982b467a83f", "e": "🍚"}]}, {"cat": "Tropeiro", "items": [{"n": "TROPEIRO", "d": "Feijão, farinha, bacon, ovo, calabresa, cebola e cebolinha", "o": [["1 por", 28], ["2 por", 50]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/d2dc7347-27db-4d10-8cfc-f13481788fa2", "e": "🍳"}]}, {"cat": "Omelete", "items": [{"n": "OMELETE", "d": "Bacon, calabresa, frango desfiado, presunto, catupiry e mussarela", "o": [["Pequeno 1 por", 23], ["Grande 1 por", 30], ["Pequeno 2 por", 40], ["Grande 2 por", 52]], "img": "https://telepizzaburguerrenito.menulegal.app/customer/public/file/d0b00f3d-2d60-451d-97a8-4f91f93b7aa8", "e": "🍳"}]}];
+const PHONE_DEFAULT = "5531986126555";
+const TEMPLATE_BEFORE = "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Tele Pizza Burguer Renito - Cardápio<\/title>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\">\n<style>\n:root{--red:#d62a0e;--ink:#1c1917;--mute:#78716c;--line:#e7e5e4;--bg:#f3f2f1}\n*{box-sizing:border-box;margin:0}\nbody{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:90px}\n.wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}\n.banner{background:var(--red);text-align:center}.banner img{width:60%;max-width:260px;display:block;margin:0 auto}\n.head{padding:16px}.head h1{color:var(--red);font-size:24px;font-weight:800}\n.head p{font-size:14px;color:var(--mute);margin-top:6px;line-height:1.4}\n.head a{color:var(--red)}\n.search{margin:0 16px 8px;width:calc(100% - 32px);padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--bg)}\n.tabs{position:sticky;top:0;background:#fff;display:flex;gap:18px;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line);z-index:5}\n.tabs a{color:var(--red);font-weight:600;font-size:14px;white-space:nowrap;text-decoration:none}\nh2{font-size:17px;color:var(--red);padding:20px 16px 8px}\n.item{display:flex;gap:12px;justify-content:space-between;margin:0 16px 10px;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;width:calc(100% - 32px);background:#fff;text-align:left;font:inherit}\n.item:hover{border-color:var(--red)}\n.item b{font-size:14px}.item small{display:block;font-size:12px;color:var(--mute);margin:4px 0 8px;line-height:1.35}\n.price{color:var(--red);font-weight:700;font-size:14px}.price i{font-style:normal;font-weight:400;color:var(--mute);font-size:11px}\n.pic{width:76px;height:76px;flex:none;border-radius:8px;background:#fde8e4;display:grid;place-items:center;font-size:32px;position:relative;overflow:hidden}\n.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}\n.foot{padding:24px 16px;font-size:13px;color:var(--mute);line-height:1.6;border-top:1px solid var(--line);margin-top:16px}\n.foot strong{color:var(--ink)}\n.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}\n.sheet.on{display:flex}\n.panel{background:#fff;width:100%;max-width:480px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;animation:up .2s ease-out}\n@keyframes up{from{transform:translateY(40px);opacity:.6}}\n.panel .pic{width:100%;height:220px;border-radius:0;font-size:80px}\n.pad{padding:16px}.pad h3{font-size:20px}.pad p{font-size:14px;color:var(--mute);margin:6px 0 14px;line-height:1.4}\ntextarea,input.f,select.f{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit;margin-top:6px}\n.bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px}\n.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px}\n.qty button{width:38px;height:44px;border:0;background:none;color:var(--red);font-size:20px;font-weight:700;cursor:pointer}\n.qty span{min-width:26px;text-align:center;font-weight:600}\n.btn{flex:1;background:var(--red);color:#fff;border:0;border-radius:8px;font:inherit;font-weight:700;padding:0 14px;height:46px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}\n.cartbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:calc(100% - 28px);max-width:452px;z-index:10;display:none}\n.cartbar.on{display:flex}\n.line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}\n.line small{display:block;color:var(--mute)}.line button{border:0;background:none;color:var(--red);cursor:pointer;font:inherit;font-size:12px}\n.tot{display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:14px 0}\n.opt{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer}.opt input{accent-color:var(--red)}\n:focus-visible{outline:2px solid var(--red);outline-offset:2px}\n@media(prefers-reduced-motion:reduce){.panel{animation:none}}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\">\n  <div class=\"banner\"><img src=\"images/1bc225e0-b886-46ad-a8bc-d45bbd426157.jpg\" data-r=\"https://telepizzaburguerrenito.menulegal.app/customer/public/file/1bc225e0-b886-46ad-a8bc-d45bbd426157\" alt=\"\" onerror=\"fb(this)\"><\/div>\n  <div class=\"head\">\n    <h1>Tele Pizza Burguer Renito.<\/h1>\n    <p>Av. José Maria da Costa 310B, Pedra Branca - Ribeirão das Neves - MG · <a href=\"https://maps.google.com/?q=Av.+José+Maria+da+Costa+310B+Pedra+Branca+Ribeirão+das+Neves\" target=\"_blank\" rel=\"noopener\">ver no mapa<\/a><\/p>\n  <\/div>\n  <input class=\"search\" id=\"q\" type=\"search\" placeholder=\"Buscar produto\" aria-label=\"Buscar produto\">\n  <nav class=\"tabs\" id=\"tabs\"><\/nav>\n  <main id=\"menu\"><\/main>\n  <div class=\"foot\">\n    <strong>Horário<\/strong><br>Segunda a domingo, 18h às 00h<br><br>\n    <strong>Telefones<\/strong><br>(31) 3455-7855 · (31) 9 8612-6555 · (31) 9 8694-6300<br><br>\n    Imagens meramente ilustrativas.<br>© 2026 Tele Pizza Burguer Renito. Todos os direitos reservados.\n  <\/div>\n<\/div>\n\n<button class=\"btn cartbar\" id=\"cartbar\"><span id=\"cn\"><\/span><span id=\"ct\"><\/span><\/button>\n\n<div class=\"sheet\" id=\"prod\"><div class=\"panel\" id=\"pp\"><\/div><\/div>\n<div class=\"sheet\" id=\"cart\"><div class=\"panel\" id=\"cp\"><\/div><\/div>\n\n<script>\n";
+const TEMPLATE_AFTER = "\n\nconst $ = id => document.getElementById(id);\nconst brl = v => \"R$ \" + v.toFixed(2).replace(\".\", \",\");\nconst esc = s => String(s).replace(/[&<>\"]/g, c => ({\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",'\"':\"&quot;\"}[c]));\nlet cart = [], cur = null, qty = 1;\n\nconst pic = it => `<div class=\"pic\">${it.e || \"🍽️\"}${it.img ? (it.img.indexOf(\"data:\") === 0 ? `<img src=\"${it.img}\" alt=\"\">` : `<img src=\"images/${it.img.split(\"/\").pop()}.jpg\" data-r=\"${esc(it.img)}\" loading=\"lazy\" alt=\"\" onerror=\"fb(this)\">`) : \"\"}<\/div>`;\n\nfunction fb(im){im.onerror=()=>(im.closest('.banner')||im).remove();im.src=im.dataset.r;}\nfunction render(filter = \"\") {\n  const f = filter.toLowerCase();\n  let html = \"\", tabs = \"\";\n  MENU.forEach((g, gi) => {\n    const its = g.items.map((it, ii) => ({it, ii})).filter(x => !f || (x.it.n + x.it.d).toLowerCase().includes(f));\n    if (!its.length) return;\n    tabs += `<a href=\"#c${gi}\">${esc(g.cat)}<\/a>`;\n    html += `<h2 id=\"c${gi}\">${esc(g.cat)}<\/h2>` + its.map(x => `\n      <button class=\"item\" onclick=\"openProd(${gi},${x.ii})\">\n        <div><b>${esc(x.it.n)}<\/b><small>${esc(x.it.d)}<\/small>\n        <span class=\"price\">${x.it.o.length > 1 ? \"<i>A partir de <\/i>\" : \"\"}${brl(Math.min(...x.it.o.map(z => z[1])))}<\/span><\/div>${pic(x.it)}\n      <\/button>`).join(\"\");\n  });\n  $(\"tabs\").innerHTML = tabs;\n  $(\"menu\").innerHTML = html || `<p class=\"pad\">Nenhum produto encontrado.<\/p>`;\n}\n\nlet opt = 0;\nfunction openProd(g, i) {\n  cur = MENU[g].items[i]; qty = 1; opt = 0; paintProd();\n  $(\"prod\").classList.add(\"on\");\n}\nfunction paintProd() {\n  const multi = cur.o.length > 1, cp = cur.o[opt][1];\n  $(\"pp\").innerHTML = `${pic(cur)}\n    <div class=\"pad\"><h3>${esc(cur.n)}<\/h3><p>${esc(cur.d)}<\/p>` +\n    (multi ? `<b style=\"font-size:13px\">Selecione uma opção<\/b>` + cur.o.map((x, k) =>\n      `<label class=\"opt\"><span><input type=\"radio\" name=\"op\" ${k === opt ? \"checked\" : \"\"} onchange=\"pick(${k})\"> ${esc(x[0])}<\/span><b>${brl(x[1])}<\/b><\/label>`).join(\"\")\n      : `<b class=\"price\">${esc(cur.o[0][0])} ${brl(cp)}<\/b>`) +\n    `<div style=\"margin-top:14px\"><b style=\"font-size:13px\">Observações<\/b>\n      <textarea id=\"obs\" rows=\"2\" placeholder=\"Ex.: sem cebola, tirar a salada\"><\/textarea><\/div><\/div>\n    <div class=\"bar\">\n      <div class=\"qty\"><button onclick=\"chg(-1)\" aria-label=\"Diminuir\">−<\/button><span>${qty}<\/span><button onclick=\"chg(1)\" aria-label=\"Aumentar\">+<\/button><\/div>\n      <button class=\"btn\" onclick=\"addCart()\"><span>Adicionar<\/span><span>${brl(cp * qty)}<\/span><\/button>\n    <\/div>`;\n}\nfunction pick(k) { const o = $(\"obs\").value; opt = k; paintProd(); $(\"obs\").value = o; }\nfunction chg(d) { const o = $(\"obs\").value; qty = Math.max(1, qty + d); paintProd(); $(\"obs\").value = o; }\nfunction addCart() {\n  const o = cur.o[opt];\n  cart.push({n: cur.n + (cur.o.length > 1 ? \" - \" + o[0] : \"\"), p: o[1], q: qty, obs: $(\"obs\").value.trim()});\n  $(\"prod\").classList.remove(\"on\"); upd();\n}\nfunction upd() {\n  const n = cart.reduce((s, c) => s + c.q, 0), t = cart.reduce((s, c) => s + c.q * c.p, 0);\n  $(\"cartbar\").classList.toggle(\"on\", n > 0);\n  $(\"cn\").textContent = `Ver pedido (${n})`; $(\"ct\").textContent = brl(t);\n}\nfunction openCart() {\n  const t = cart.reduce((s, c) => s + c.q * c.p, 0);\n  $(\"cp\").innerHTML = `<div class=\"pad\"><h3>Seu pedido<\/h3>` +\n    cart.map((c, i) => `<div class=\"line\"><div>${c.q}x ${esc(c.n)}${c.obs ? `<small>${esc(c.obs)}<\/small>` : \"\"}<button onclick=\"rm(${i})\">Remover<\/button><\/div><b>${brl(c.q * c.p)}<\/b><\/div>`).join(\"\") +\n    `<div class=\"tot\"><span>Total<\/span><span>${brl(t)}<\/span><\/div>\n     <small style=\"color:var(--mute)\">Taxa de entrega a consultar.<\/small>\n     <input class=\"f\" id=\"nm\" placeholder=\"Seu nome\">\n     <input class=\"f\" id=\"ad\" placeholder=\"Endereço de entrega (rua, número, bairro)\">\n     <select class=\"f\" id=\"pg\"><option>Pagamento: Pix<\/option><option>Pagamento: Dinheiro<\/option><option>Pagamento: Cartão de crédito<\/option><option>Pagamento: Cartão de débito<\/option><\/select>\n    <\/div>\n    <div class=\"bar\"><button class=\"btn\" style=\"justify-content:center\" onclick=\"send()\">Enviar pedido pelo WhatsApp<\/button><\/div>`;\n  $(\"cart\").classList.add(\"on\");\n}\nfunction rm(i) { cart.splice(i, 1); upd(); cart.length ? openCart() : $(\"cart\").classList.remove(\"on\"); }\nfunction send() {\n  const nm = $(\"nm\").value.trim(), ad = $(\"ad\").value.trim();\n  if (!nm || !ad) { alert(\"Preencha seu nome e o endereço de entrega.\"); return; }\n  const t = cart.reduce((s, c) => s + c.q * c.p, 0);\n  const msg = `*Novo pedido - Tele Pizza Burguer Renito*\\n\\n` +\n    cart.map(c => `${c.q}x ${c.n} - ${brl(c.q * c.p)}${c.obs ? `\\n   Obs.: ${c.obs}` : \"\"}`).join(\"\\n\") +\n    `\\n\\n*Total: ${brl(t)}* (sem taxa de entrega)\\n\\nNome: ${nm}\\nEndereço: ${ad}\\n${$(\"pg\").value}`;\n  window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`, \"_blank\");\n}\n\n$(\"q\").addEventListener(\"input\", e => render(e.target.value));\n$(\"cartbar\").addEventListener(\"click\", openCart);\n[$(\"prod\"), $(\"cart\")].forEach(s => s.addEventListener(\"click\", e => { if (e.target === s) s.classList.remove(\"on\"); }));\nrender();\n<\/script>\n<\/body>\n<\/html>\n";
+
+const STORE_KEY = "renito_menu_v1";
+const $ = id => document.getElementById(id);
+const brl = v => "R$ " + Number(v || 0).toFixed(2).replace(".", ",");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function loadState() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) { /* segue pro seed */ }
+  }
+  return { phone: PHONE_DEFAULT, menu: SEED_MENU };
+}
+function saveState() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+let catAtual = state.menu[0] ? state.menu[0].cat : null;
+
+function renderTabs() {
+  $("phone").value = state.phone;
+  $("tabs").innerHTML = state.menu.map(g => `
+    <button class="${g.cat === catAtual ? "on" : ""}" onclick="selCat(${JSON.stringify(g.cat)})">${esc(g.cat)}</button>
+  `).join("") || `<span class="empty">Nenhuma categoria ainda</span>`;
+}
+function selCat(cat) { catAtual = cat; renderTabs(); renderLista(); }
+
+function renderLista() {
+  const g = state.menu.find(x => x.cat === catAtual);
+  if (!g) { $("lista").innerHTML = `<div class="empty">Escolha ou crie uma categoria.</div>`; return; }
+  if (!g.items.length) { $("lista").innerHTML = `<div class="empty">Nenhum produto nesta categoria ainda.</div>`; return; }
+  $("lista").innerHTML = g.items.map((it, i) => {
+    const precoMin = Math.min(...it.o.map(o => o[1]));
+    const thumb = it.img
+      ? `<img class="ph" src="${it.img}" alt="" onerror="this.style.display='none'">`
+      : `<div class="ph">${it.e || "🍽️"}</div>`;
+    return `<div class="prod">
+      ${thumb}
+      <div class="info"><b>${esc(it.n)}</b><small>${it.o.length > 1 ? "a partir de " : ""}${brl(precoMin)}</small></div>
+      <div class="acts">
+        <button class="btn sec small" onclick="editProd(${i})">Editar</button>
+        <button class="btn danger small" onclick="delProd(${i})">Excluir</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function novaCategoria() {
+  const nome = prompt("Nome da nova categoria:");
+  if (!nome || !nome.trim()) return;
+  if (state.menu.some(g => g.cat === nome.trim())) { alert("Já existe uma categoria com esse nome."); return; }
+  state.menu.push({ cat: nome.trim(), items: [] });
+  catAtual = nome.trim();
+  saveState(); renderTabs(); renderLista();
+}
+
+function delProd(i) {
+  const g = state.menu.find(x => x.cat === catAtual);
+  if (!confirm(`Excluir "${g.items[i].n}"?`)) return;
+  g.items.splice(i, 1);
+  saveState(); renderLista();
+}
+
+let editIndex = null;
+function novoProd() {
+  if (!catAtual) { alert("Crie uma categoria primeiro."); return; }
+  editIndex = null;
+  abrirForm({ n: "", d: "", e: "🍽️", img: "", o: [["", 0]] });
+}
+function editProd(i) {
+  editIndex = i;
+  const g = state.menu.find(x => x.cat === catAtual);
+  abrirForm(JSON.parse(JSON.stringify(g.items[i])));
+}
+
+function abrirForm(item) {
+  $("modalBody").innerHTML = `
+    <h3 style="margin-top:0">${editIndex === null ? "Novo produto" : "Editar produto"}</h3>
+    <label>Nome</label><input id="f_n" value="${esc(item.n)}">
+    <label>Ingredientes / descrição</label><textarea id="f_d" rows="3">${esc(item.d)}</textarea>
+    <label>Emoji (opcional, aparece se não houver foto)</label><input id="f_e" value="${esc(item.e || "")}" maxlength="4">
+    <label>Foto (opcional)</label>
+    <input type="file" id="f_img" accept="image/*">
+    <img id="f_imgprev" class="imgprev" src="${item.img || ""}" style="display:${item.img ? "block" : "none"}">
+    <input type="hidden" id="f_img_data" value="${item.img ? esc(item.img) : ""}">
+    <label>Preços</label>
+    <div id="f_opts"></div>
+    <button class="btn sec small" id="f_addopt" type="button">+ opção de preço</button>
+    <div class="row" style="margin-top:16px">
+      <button class="btn sec" id="f_cancel">Cancelar</button>
+      <button class="btn ok" id="f_save">Salvar</button>
+    </div>
+  `;
+  const opts = item.o && item.o.length ? item.o : [["", 0]];
+  opts.forEach(o => addOptRow(o[0], o[1]));
+
+  $("f_addopt").onclick = () => addOptRow("", 0);
+  $("f_img").onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      $("f_img_data").value = ev.target.result;
+      $("f_imgprev").src = ev.target.result;
+      $("f_imgprev").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  };
+  $("f_cancel").onclick = fecharModal;
+  $("f_save").onclick = salvarProd;
+  $("modal").classList.add("on");
+}
+function addOptRow(label, preco) {
+  const row = document.createElement("div");
+  row.className = "opt-row";
+  row.innerHTML = `
+    <input placeholder="Rótulo (ex.: 1 por, Grande 30cm...)" class="o_label" value="${esc(label || "")}">
+    <input type="number" step="0.01" placeholder="Preço" class="o_price" value="${preco || ""}" style="max-width:100px">
+    <button class="btn danger small" type="button" onclick="this.parentElement.remove()">×</button>
+  `;
+  $("f_opts").appendChild(row);
+}
+function fecharModal() { $("modal").classList.remove("on"); }
+
+function salvarProd() {
+  const n = $("f_n").value.trim();
+  if (!n) { alert("Informe o nome do produto."); return; }
+  const rows = [...document.querySelectorAll("#f_opts .opt-row")];
+  const o = rows.map(r => [r.querySelector(".o_label").value.trim(), Number(r.querySelector(".o_price").value) || 0])
+                .filter(x => x[1] > 0 || x[0]);
+  if (!o.length) { alert("Informe ao menos um preço."); return; }
+  const item = {
+    n, d: $("f_d").value.trim(), e: $("f_e").value.trim() || "🍽️",
+    img: $("f_img_data").value || "", o
+  };
+  const g = state.menu.find(x => x.cat === catAtual);
+  if (editIndex === null) g.items.push(item); else g.items[editIndex] = item;
+  saveState(); fecharModal(); renderLista();
+}
+
+$("phone").addEventListener("input", e => { state.phone = e.target.value.trim(); saveState(); });
+$("btnNovaCat").addEventListener("click", novaCategoria);
+$("btnNovoProd").addEventListener("click", novoProd);
+$("modal").addEventListener("click", e => { if (e.target.id === "modal") fecharModal(); });
+
+$("btnExport").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup-cardapio-renito.json";
+  a.click();
+});
+$("btnImportShow").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const novo = JSON.parse(ev.target.result);
+      if (!novo.menu) throw new Error("formato inválido");
+      state = novo;
+      catAtual = state.menu[0] ? state.menu[0].cat : null;
+      saveState(); renderTabs(); renderLista();
+      alert("Backup importado com sucesso.");
+    } catch (err) { alert("Arquivo inválido."); }
+  };
+  reader.readAsText(file);
+});
+
+$("btnBaixar").addEventListener("click", () => {
+  const dados = `const PHONE = "${state.phone}";\nconst MENU = ${JSON.stringify(state.menu)};\n`;
+  const html = TEMPLATE_BEFORE + dados + TEMPLATE_AFTER;
+  const blob = new Blob([html], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  a.click();
+});
+
+renderTabs();
+renderLista();
+
+</script>
+</body>
+</html>
